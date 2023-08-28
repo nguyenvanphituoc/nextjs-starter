@@ -3,13 +3,8 @@ import Head from "next/head";
 import Layout, { siteTitle } from "@/components/Layout";
 import utilStyles from "@/app/utils.module.css";
 
-export async function getPost() {
-  const allPostsData = getSortedPostsData();
-  return allPostsData;
-}
-
 export default async function Home() {
-  const allPostsData = await getPost();
+  const allPostsData = getSortedPostsData();
   return (
     <Layout home>
       {/* Keep the existing code here */}

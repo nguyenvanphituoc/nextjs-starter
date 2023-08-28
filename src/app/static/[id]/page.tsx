@@ -4,18 +4,22 @@ import Date from "@/components/Date";
 import { getAllPostIds, getPostData } from "@/lib/posts";
 import utilStyles from "@/app/utils.module.css";
 
-export async function generateStaticParams() {
+type Params = {
+  id: string;
+};
+
+type Props = {
+  params: Params;
+};
+
+export async function generateStaticParams(): Promise<Params[]> {
   const paths = getAllPostIds();
   return paths;
 }
 
-export async function getPostStaticProps(params) {
+export default async function PostDetail(props: Props) {
+  const { params } = props;
   const postData = await getPostData(params.id);
-  return postData;
-}
-
-export default async function PostDetail({ params }) {
-  const postData = await getPostStaticProps(params);
   return (
     <Layout>
       {/* Add this <Head> tag */}

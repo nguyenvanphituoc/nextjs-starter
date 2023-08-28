@@ -23,6 +23,8 @@ export function getSortedPostsData() {
     // Combine the data with the id
     return {
       id,
+      date: "",
+      title: "",
       ...matterResult.data,
     };
   });
@@ -52,6 +54,8 @@ export async function getPostData(id) {
   // Combine the data with the id and contentHtml
   return {
     id,
+    date: "",
+    title: "",
     contentHtml,
     ...matterResult.data,
   };
