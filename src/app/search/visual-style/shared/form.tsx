@@ -1,44 +1,69 @@
 "use client";
+import { useRouter } from "next/navigation";
 import Input from "@/components/Form/Input";
 import Selection from "@/components/Form/Selection";
 import Button from "@/components/Button";
 import { useForm, SubmitHandler } from "react-hook-form";
+import { useAppDispatch } from "@/redux";
+import { submitFormAction } from "@/redux/search/slice";
+import { RedirectType } from "next/dist/client/components/redirect";
 
-interface IFormInputs {
-  TextField: string;
-  Option: any;
-}
+type JSONModelType = {
+  [key in string]: Array<{
+    value: string;
+    label: string;
+    note?: string;
+  }>;
+};
 
-export default function Form({
-  models,
-}: {
-  models: {
-    [key in string]: Array<{
-      value: string;
-      label: string;
-      note?: string;
-    }>;
+type FormKeys = keyof JSONModelType;
+type Values = JSONModelType[FormKeys];
+type FormInput = {
+  [key in FormKeys]: {
+    id: Values["0"]["label"];
+    value: Values["0"]["value"];
   };
-}) {
-  type FormKeys = keyof typeof models;
-  type Values = (typeof models)[FormKeys];
-  type FormInput = {
-    [key in FormKeys]: Values;
-  };
+};
 
+export default function Form({ models }: { models: JSONModelType }) {
+  let initialIndex = 0;
+  const dispatch = useAppDispatch();
+  const router = useRouter();
   const {
     handleSubmit,
     watch,
     control,
     reset,
     formState: { errors },
-  } = useForm<FormInput>({});
-  const onSubmit: SubmitHandler<FormInput> = (data) => console.log(data);
+  } = useForm<FormInput>({
+    defaultValues: Object.entries(models).reduce((acc, [key, item]) => {
+      acc[key] = {
+        id: item[initialIndex].label,
+        value: item[initialIndex].value,
+      };
+      return acc;
+    }, {} as FormInput),
+  });
+
+  const onSubmit: SubmitHandler<FormInput> = async (formData) => {
+    dispatch(
+      submitFormAction(
+        Object.entries(formData).reduce((acc, [key, item]) => {
+          acc[key] = [item];
+          return acc;
+        }, {} as Parameters<typeof submitFormAction>["0"])
+      )
+    );
+
+    router.push("/search/suggestion");
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="block mx-auto my-20 max-w-md rounded-lg bg-white p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:bg-neutral-700">
+      <div className="block mx-auto mt-10 max-w-md rounded-lg bg-white p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:bg-neutral-700">
         {Object.entries(models).map(([label, data]) => {
+          // ignore the visual-style model
+          if (label === "visual_style") return null;
           return (
             <Selection
               key={label}
@@ -49,7 +74,7 @@ export default function Form({
                 id: item.label,
                 value: item.value,
               }))}
-              initialIndex={0}
+              initialIndex={initialIndex}
             />
           );
         })}
