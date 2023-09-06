@@ -22,6 +22,7 @@
     "react-hook-form": "^7.45.4",
     "react-redux": "^8.1.2",
     "redux-logger": "^3.0.6",
+    "redux-persist": "^6.0.0",
     "redux-saga": "^1.2.3",
     "remark": "^14.0.3",
     "remark-html": "^15.0.2",
