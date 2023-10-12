@@ -21,17 +21,43 @@ row {
   industry: { prefix: '', values: [ '' ] }
 }
  */
+export const DATA_KEY_LIST = [
+  "composition",
+  "element",
+  "medium",
+  "shaping",
+  "time_context",
+  "tone",
+  "visual_style",
+] as const;
 
-export type FormDataType = {
-  [key in string]: {
-    id: string;
-    value: string;
-  }[];
-};
+export type DataKey = (typeof DATA_KEY_LIST)[number];
 
 export type RowDataType = {
-  [key in string]: {
+  [key in DataKey]: {
     prefix?: string;
     values: string[];
   };
 };
+
+export type JSONModelType = {
+  [key in DataKey]: Array<{
+    value: string;
+    label: string;
+    note?: string;
+  }>;
+};
+
+export type JSONModelKeys = keyof JSONModelType;
+// export type Values = JSONModelType[JSONModelKeys];
+
+export type FormInput = {
+  [key in JSONModelKeys]: string[];
+} & {
+  entity: string;
+};
+
+export interface SliceState {
+  formVisualStyle: RowDataType[];
+  visualStyleComposition: RowDataType[];
+}

@@ -1,17 +1,12 @@
 import { createSlice, createAction, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../index";
 // Define a type for the slice state
-import { RowDataType, FormDataType } from "./type";
-
-interface SliceState {
-  searchResult: RowDataType[];
-  originalData: RowDataType[];
-}
+import { RowDataType, SliceState } from "./type";
 
 // Define the initial state using that type
 const initialState = {
-  searchResult: [],
-  originalData: [],
+  formVisualStyle: [],
+  visualStyleComposition: [],
 } as SliceState;
 
 export const Slice = createSlice({
@@ -22,22 +17,19 @@ export const Slice = createSlice({
       state: SliceState,
       { payload }: PayloadAction<RowDataType[]>
     ) => {
-      state.searchResult = payload;
+      state.formVisualStyle = payload;
     },
     updateData: (state, { payload }: PayloadAction<RowDataType[]>) => {
-      state.originalData = payload;
+      state.visualStyleComposition = payload;
     },
   },
 });
 // Action
 export const { updateData, updateSearchResult } = Slice.actions;
-export const submitFormAction = createAction<FormDataType>(
-  "application/submitFormAction"
-);
 // selectors
 export const selectOriginalData = (state: RootState) =>
-  state.application.originalData;
+  state.application.visualStyleComposition;
 export const selectSearchResult = (state: RootState) =>
-  state.application.searchResult;
+  state.application.formVisualStyle;
 //
 export default Slice.reducer;
