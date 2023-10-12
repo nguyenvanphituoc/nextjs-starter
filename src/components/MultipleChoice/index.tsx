@@ -34,6 +34,7 @@ const MultipleChoice = ({ list, defaultValues, onChange }: ComponentProps) => {
     if (defaultValues && defaultValues?.length) {
       selectedItems.current.push(...defaultValues);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
