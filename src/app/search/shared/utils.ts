@@ -1,5 +1,7 @@
-import { Values as ModelValues } from "@/redux/search/type";
+import { JSONModelType, JSONModelKeys } from "@/redux/search/type";
 
-export function getDisplayValue(item: ModelValues["0"]): string {
+export function getDisplayValue(
+  item: JSONModelType[JSONModelKeys]["0"]
+): string {
   return `${item.value} ${item.note ? `( ${item.note})` : ""}`.trim();
 }

@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   });
 }
 
-export function convertCsvToCompositionJson(fileContent: string) {
+function convertCsvToCompositionJson(fileContent: string) {
   const rows = fileContent.trim().split("\n");
   const headers = rows[0].split(",");
   const data = [];
