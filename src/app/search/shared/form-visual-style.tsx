@@ -9,7 +9,6 @@ import { getDisplayValue } from "./utils";
 export default function FieldSetComponent(props: {
   control: Control<FormInput>;
   models: JSONModelType;
-  initialIndex: number;
   relativeField: keyof FormInput;
 }) {
   const entity = useController({
@@ -44,10 +43,31 @@ export default function FieldSetComponent(props: {
       }))
     : [];
 
+  const foundTCIndex = props.models["time_context"]?.length
+    ? props.models["time_context"]?.findIndex(
+        (i) => getDisplayValue(i) === timeContext.field.value?.[0]
+      )
+    : -1;
+
+  const foundSIndex = props.models["shaping"]?.length
+    ? props.models["shaping"]?.findIndex(
+        (i) => getDisplayValue(i) === shaping.field.value?.[0]
+      )
+    : -1;
+
+  const foundMIndex = props.models["medium"]?.length
+    ? props.models["medium"]?.findIndex(
+        (i) => getDisplayValue(i) === medium.field.value?.[0]
+      )
+    : -1;
+
+  const toneTitle =
+    entity.field.value?.[0] === "All"
+      ? "Tông màu"
+      : `Tông màu "${entity.field.value}"`;
+
   return (
-    <FieldSet
-      legend={`"${entity.field.value}" sẽ có phong cách theo mô tả như sau: `}
-    >
+    <FieldSet legend={`${toneTitle} sẽ có phong cách theo mô tả như sau: `}>
       {props.models["time_context"]?.length && (
         <Selection
           name="time_context"
@@ -57,7 +77,7 @@ export default function FieldSetComponent(props: {
             id: item.label,
             value: getDisplayValue(item),
           }))}
-          initialIndex={props.initialIndex}
+          initialIndex={foundTCIndex > -1 ? foundTCIndex : undefined}
           onChange={(selectedItem) => {
             timeContext.field.onChange([selectedItem.value]);
           }}
@@ -72,7 +92,7 @@ export default function FieldSetComponent(props: {
             id: item.label,
             value: getDisplayValue(item),
           }))}
-          initialIndex={props.initialIndex}
+          initialIndex={foundSIndex > -1 ? foundSIndex : undefined}
           onChange={(selectedItem) => {
             shaping.field.onChange([selectedItem.value]);
           }}
@@ -87,7 +107,7 @@ export default function FieldSetComponent(props: {
             id: item.label,
             value: getDisplayValue(item),
           }))}
-          initialIndex={props.initialIndex}
+          initialIndex={foundMIndex > -1 ? foundMIndex : undefined}
           onChange={(selectedItem) => {
             medium.field.onChange([selectedItem.value]);
           }}

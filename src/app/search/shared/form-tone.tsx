@@ -8,7 +8,6 @@ import { getDisplayValue } from "./utils";
 export default function FieldSetComponent(props: {
   control: Control<FormInput>;
   models: JSONModelType;
-  initialIndex: number;
   relativeField: keyof FormInput;
 }) {
   const entity = useController({
@@ -21,6 +20,12 @@ export default function FieldSetComponent(props: {
     control: props.control,
   });
 
+  const foundIndex = props.models["tone"]?.length
+    ? props.models["tone"].findIndex(
+        (i) => getDisplayValue(i) === tone.field.value?.[0]
+      )
+    : -1;
+
   return (
     <FieldSet legend={`"${entity.field.value}" có tông màu như thế nào?`}>
       {props.models["tone"]?.length && (
@@ -31,7 +36,7 @@ export default function FieldSetComponent(props: {
             id: item.label,
             value: getDisplayValue(item),
           }))}
-          initialIndex={props.initialIndex}
+          initialIndex={foundIndex > -1 ? foundIndex : undefined}
           onChange={(selectedItem) => {
             tone.field.onChange([selectedItem.value]);
           }}

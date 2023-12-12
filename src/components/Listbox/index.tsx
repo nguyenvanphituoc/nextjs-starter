@@ -11,6 +11,7 @@ export type ComponentProps = {
   list: Array<ItemType>;
   onChange?: (selectItem: ItemType) => void;
   initialIndex?: number;
+  initialValue?: ItemType;
 };
 
 const ListBox = forwardRef<HTMLSelectElement, ComponentProps>(

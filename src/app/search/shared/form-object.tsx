@@ -1,6 +1,6 @@
 "use client";
 import FieldSet from "@/components/Form/FieldSet";
-import { Control } from "react-hook-form";
+import { Control, useController } from "react-hook-form";
 import { FormInput, JSONModelType } from "@/redux/search/type";
 import Input from "@/components/Form/Input";
 

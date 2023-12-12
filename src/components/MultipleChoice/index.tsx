@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useEffect, useRef } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 
 export type ItemType = {
   id: string;
@@ -14,6 +14,7 @@ export type ComponentProps = {
 
 const MultipleChoice = ({ list, defaultValues, onChange }: ComponentProps) => {
   const selectedItems = useRef<Array<ItemType>>([]);
+  const [__render, setRender] = useState(Math.random());
 
   const onSelectedItem = useCallback(
     (item: ItemType) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -33,6 +34,7 @@ const MultipleChoice = ({ list, defaultValues, onChange }: ComponentProps) => {
   useEffect(() => {
     if (defaultValues && defaultValues?.length) {
       selectedItems.current.push(...defaultValues);
+      setRender(Math.random());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -41,7 +43,7 @@ const MultipleChoice = ({ list, defaultValues, onChange }: ComponentProps) => {
     <div className="flex flex-wrap -mx-2">
       {list.map((item, index) => (
         <div
-          key={index}
+          key={`${__render}-${index}`}
           className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 px-2 mb-4"
         >
           <label className="inline-flex items-center">

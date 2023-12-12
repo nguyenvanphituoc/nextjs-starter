@@ -1,7 +1,6 @@
 import Head from "next/head";
 import Image from "next/image";
 import Form from "./shared/form";
-import Result from "./shared/result";
 
 export default async function Page() {
   return (

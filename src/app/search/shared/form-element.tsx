@@ -21,11 +21,11 @@ export default function FieldSetComponent(props: {
     control: props.control,
   });
 
-  const initialIndex = useRef(
-    (() => {
-      return 0;
-    })()
-  );
+  const foundIndex = props.models["element"]?.length
+    ? props.models["element"].findIndex(
+        (i) => getDisplayValue(i) === element.field.value?.[0]
+      )
+    : -1;
 
   return (
     <FieldSet
@@ -39,7 +39,7 @@ export default function FieldSetComponent(props: {
             id: item.label,
             value: getDisplayValue(item),
           }))}
-          initialIndex={initialIndex.current}
+          initialIndex={foundIndex > -1 ? foundIndex : undefined}
           onChange={(selectedItem) => {
             element.field.onChange([selectedItem.value]);
           }}

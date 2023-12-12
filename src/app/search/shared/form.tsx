@@ -3,7 +3,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Input from "@/components/Form/Input";
 import Selection from "@/components/Form/Selection";
 import Button from "@/components/Button";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, Control } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "@/redux";
 import { selectOriginalData, updateData } from "@/redux/search/slice";
 import { RedirectType } from "next/dist/client/components/redirect";
@@ -144,7 +144,8 @@ export default function Form() {
     DISPLAY_SEARCH_STEP.OBJECT
   );
 
-  const initialIndex = useRef(0).current;
+  const alreadySubmitted = useRef(false);
+  const isFirstLoad = useRef(true);
 
   const getQueryObject = useCallback(
     (query: URLSearchParams): Partial<FormInput> => {
@@ -192,50 +193,78 @@ export default function Form() {
         },
   });
 
-  const onSubmit: SubmitHandler<FormInput> = useCallback(
-    async (formData) => {
-      const query = new URLSearchParams();
-      Object.entries(formData).forEach(([key, item]) => {
-        if (Array.isArray(item)) {
-          item.forEach((i) => query.append(`${key}[]`, i?.trim() || ""));
-        } else {
-          // entity
-          query.append(key, item?.trim() || "");
-        }
-      });
-      // cast to string
-      const search = query.toString();
-      const newQuery = search ? `?${search}` : "";
-      // replace since we don't want to build a history
-      router.replace(`${pathname}${newQuery}`, {
-        scroll: true,
-      });
-      //
-      // setValue for visual style
-      const suggestionTopFive = visualOriginData
-        .toSorted(compareFn(formData))
-        .slice(0, 5);
+  const onSubmit: SubmitHandler<FormInput> = async (formData) => {
+    //
+    // setValue for visual style
+    const suggestionTopFive = visualOriginData
+      .toSorted(compareFn(formData))
+      .slice(0, 5);
 
-      const values = suggestionTopFive.map(
-        (item) => item["visual_style"]?.values[0] ?? ""
-      );
-      setValue(
-        "visual_style",
-        values.filter(
-          (value, index, arr) => arr.findIndex((v) => v === value) === index
-        )
-      );
+    const values = suggestionTopFive.map(
+      (item) => item["visual_style"]?.values[0] ?? ""
+    );
+    console.log("visual style values", values);
+    //
+    setValue(
+      "visual_style",
+      values.filter(
+        (value, index, arr) => arr.findIndex((v) => v === value) === index
+      )
+    );
+    //
+
+    // update display step
+    if (alreadySubmitted.current) {
       // search result
       setDisplayStep(DISPLAY_SEARCH_STEP.RESULT);
-    },
-    [pathname, router, setValue, visualOriginData]
-  );
+      //
+      alreadySubmitted.current = true;
+    } else {
+      switch (displayStep) {
+        case DISPLAY_SEARCH_STEP.OBJECT:
+          setDisplayStep(DISPLAY_SEARCH_STEP.ELEMENT);
+          return;
+        case DISPLAY_SEARCH_STEP.ELEMENT:
+          setDisplayStep(DISPLAY_SEARCH_STEP.TONE);
+          return;
+        case DISPLAY_SEARCH_STEP.TONE:
+          setDisplayStep(DISPLAY_SEARCH_STEP.VISUAL_STYLE);
+          return;
+        case DISPLAY_SEARCH_STEP.VISUAL_STYLE:
+          // search result
+          setDisplayStep(DISPLAY_SEARCH_STEP.RESULT);
+          //
+          alreadySubmitted.current = true;
+          break;
+        default:
+          return;
+      }
+    }
+    //
+    const query = new URLSearchParams();
+    Object.entries(formData).forEach(([key, item]) => {
+      if (Array.isArray(item)) {
+        item.forEach((i) => query.append(`${key}[]`, i?.trim() || ""));
+      } else {
+        // entity
+        query.append(key, item?.trim() || "");
+      }
+    });
+    // cast to string
+    const search = query.toString();
+    const newQuery = search ? `?${search}` : "";
+    // replace since we don't want to build a history
+    router.replace(`${pathname}${newQuery}`, {
+      scroll: true,
+    });
+  };
 
-  useEffect(() => {
-    getData().then((data: JSONModelType) => {
-      setModels(data);
-      // set form default values
-      Object.entries(data).forEach(([key, item]) => {
+  const getInitialData = useCallback(async () => {
+    const models: JSONModelType = await getData();
+    const visualData = await getVisualData();
+    // set form default values
+    isFirstLoad.current &&
+      Object.entries(models).forEach(([key, item]) => {
         // default values update if need
         if (key === "visual_style") {
           return;
@@ -243,58 +272,120 @@ export default function Form() {
         if (!getValues(key as DataKey)) {
           setValue(key as DataKey, [getDisplayValue(item[0])]);
         }
+
+        isFirstLoad.current = false;
       });
-    });
 
-    getVisualData().then((data) => {
-      dispatch(updateData(data));
-    });
-  }, [dispatch, getValues, setValue]);
+    dispatch(updateData(visualData));
+    setModels(models);
+  }, [dispatch, setValue, getValues]);
 
-  if (displayStep === DISPLAY_SEARCH_STEP.RESULT) {
-    return (
-      <Result
-        formData={getValues()}
-        onRequestEdit={() => {
-          setDisplayStep(DISPLAY_SEARCH_STEP.OBJECT);
-        }}
-      />
-    );
-  }
+  useEffect(() => {
+    getInitialData();
+  }, [getInitialData]);
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="max-w-3xl mx-auto">
-        <FormObject control={control} />
-        {models ? (
-          <>
+  useEffect(() => {
+    if (isFirstLoad.current && searchParams.toString()) {
+      const formData = getQueryObject(searchParams);
+      // set form default values
+      Object.entries(formData).forEach(([key, item]) => {
+        setValue(key as DataKey, item);
+      });
+      // search result
+      setDisplayStep(DISPLAY_SEARCH_STEP.RESULT);
+      //
+      alreadySubmitted.current = true;
+      isFirstLoad.current = false;
+    }
+  }, [searchParams, getQueryObject, setValue]);
+
+  const renderStep = useCallback(
+    (control: Control<FormInput, any>, models?: JSONModelType) => {
+      // guard
+      if (!models && DISPLAY_SEARCH_STEP.OBJECT !== displayStep) return null;
+      //
+      switch (displayStep) {
+        case DISPLAY_SEARCH_STEP.OBJECT:
+          return <FormObject control={control} />;
+        case DISPLAY_SEARCH_STEP.ELEMENT:
+          return (
             <FormElement
               control={control}
-              models={models}
+              models={models!}
               relativeField="entity"
             />
+          );
+        case DISPLAY_SEARCH_STEP.TONE:
+          return (
             <FormTone
               control={control}
-              models={models}
+              models={models!}
               relativeField="entity"
-              initialIndex={0}
             />
+          );
+        case DISPLAY_SEARCH_STEP.VISUAL_STYLE:
+          return (
             <FormVisualStyle
               control={control}
-              models={models}
+              models={models!}
               relativeField="tone"
-              initialIndex={0}
             />
-          </>
-        ) : undefined}
+          );
+        default:
+          return null;
+      }
+    },
+    [displayStep]
+  );
+
+  const displayFormTitle = useCallback(() => {
+    switch (displayStep) {
+      case DISPLAY_SEARCH_STEP.OBJECT:
+      case DISPLAY_SEARCH_STEP.ELEMENT:
+      case DISPLAY_SEARCH_STEP.TONE:
+      case DISPLAY_SEARCH_STEP.VISUAL_STYLE:
+        return "NEXT STEP";
+    }
+  }, [displayStep]);
+
+  return displayStep === DISPLAY_SEARCH_STEP.RESULT ? (
+    <Result
+      formData={getValues()}
+      onRequestEdit={(focus) => {
+        switch (focus) {
+          case "entity":
+            setDisplayStep(DISPLAY_SEARCH_STEP.OBJECT);
+            break;
+          case "visual_style":
+          case "composition":
+          case "time_context":
+          case "shaping":
+          case "medium":
+            setDisplayStep(DISPLAY_SEARCH_STEP.VISUAL_STYLE);
+            break;
+          case "element":
+            setDisplayStep(DISPLAY_SEARCH_STEP.ELEMENT);
+            break;
+          case "tone":
+            setDisplayStep(DISPLAY_SEARCH_STEP.TONE);
+            break;
+          default:
+            break;
+        }
+      }}
+    />
+  ) : (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="max-w-3xl mx-auto">
+        {renderStep(control, models)}
         <Button
-          className="dark:active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]] inline-block w-full rounded bg-primary px-6 pb-2 pt-2.5 text-xs font-medium uppercase leading-normal text-black shadow-[0_4px_9px_-4px_#3b71ca] transition duration-150 ease-in-out hover:bg-primary-600 hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:bg-primary-600 focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:outline-none focus:ring-0 active:bg-primary-700 active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] dark:shadow-[0_4px_9px_-4px_rgba(59,113,202,0.5)] dark:hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]"
+          className="mb-10 dark:active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]] inline-block w-full rounded bg-primary px-6 pb-2 pt-2.5 text-xs font-medium uppercase leading-normal text-black shadow-[0_4px_9px_-4px_#3b71ca] transition duration-150 ease-in-out hover:bg-primary-600 hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:bg-primary-600 focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:outline-none focus:ring-0 active:bg-primary-700 active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] dark:shadow-[0_4px_9px_-4px_rgba(59,113,202,0.5)] dark:hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]"
           data-te-ripple-init
           data-te-ripple-color="light"
           type="submit"
         >
           <span className="flex items-center justify-center">
-            <span className="mr-2">Submit</span>
+            <span className="mr-2">{displayFormTitle()}</span>
           </span>
         </Button>
       </div>
