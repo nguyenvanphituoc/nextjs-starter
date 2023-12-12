@@ -289,7 +289,7 @@ export default function Form() {
       const formData = getQueryObject(searchParams);
       // set form default values
       Object.entries(formData).forEach(([key, item]) => {
-        setValue(key as DataKey, item);
+        setValue(key as DataKey, item as any);
       });
       // search result
       setDisplayStep(DISPLAY_SEARCH_STEP.RESULT);
