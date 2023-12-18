@@ -1,7 +1,6 @@
 import Map from "react-map-gl";
 import React from "react";
 import MapBox from "./shared/mapbox";
-import Threejs from "./shared/threejs";
 
 const fetchingDataSet = async () => {
   const mapboxUrl =
