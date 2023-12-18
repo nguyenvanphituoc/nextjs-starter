@@ -3,6 +3,10 @@ const nextConfig = {
   experimental: {
     serverActions: true,
   },
+  transpilePackages: ["three"],
+  images: {
+    domains: ["www.google.com", "www.google.co.in", "www.gstatic.com"],
+  },
   async redirects() {
     return [
       {
