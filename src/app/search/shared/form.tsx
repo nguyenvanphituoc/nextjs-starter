@@ -203,7 +203,7 @@ export default function Form() {
     const values = suggestionTopFive.map(
       (item) => item["visual_style"]?.values[0] ?? ""
     );
-    console.log("visual style values", values);
+
     //
     setValue(
       "visual_style",
@@ -240,6 +240,7 @@ export default function Form() {
           return;
       }
     }
+
     //
     const query = new URLSearchParams();
     Object.entries(formData).forEach(([key, item]) => {
@@ -257,6 +258,30 @@ export default function Form() {
     router.replace(`${pathname}${newQuery}`, {
       scroll: true,
     });
+  };
+
+  const onBack = () => {
+    if (alreadySubmitted.current) {
+      // search result
+      setDisplayStep(DISPLAY_SEARCH_STEP.RESULT);
+      return;
+    }
+
+    switch (displayStep) {
+      case DISPLAY_SEARCH_STEP.OBJECT:
+        return;
+      case DISPLAY_SEARCH_STEP.ELEMENT:
+        setDisplayStep(DISPLAY_SEARCH_STEP.OBJECT);
+        return;
+      case DISPLAY_SEARCH_STEP.TONE:
+        setDisplayStep(DISPLAY_SEARCH_STEP.ELEMENT);
+        return;
+      case DISPLAY_SEARCH_STEP.VISUAL_STYLE:
+        setDisplayStep(DISPLAY_SEARCH_STEP.TONE);
+        return;
+      default:
+        return;
+    }
   };
 
   const getInitialData = useCallback(async () => {
@@ -375,19 +400,42 @@ export default function Form() {
       }}
     />
   ) : (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+      }}
+    >
       <div className="max-w-3xl mx-auto">
         {renderStep(control, models)}
-        <Button
-          className="mb-10 dark:active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]] inline-block w-full rounded bg-primary px-6 pb-2 pt-2.5 text-xs font-medium uppercase leading-normal text-black shadow-[0_4px_9px_-4px_#3b71ca] transition duration-150 ease-in-out hover:bg-primary-600 hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:bg-primary-600 focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:outline-none focus:ring-0 active:bg-primary-700 active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] dark:shadow-[0_4px_9px_-4px_rgba(59,113,202,0.5)] dark:hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]"
-          data-te-ripple-init
-          data-te-ripple-color="light"
-          type="submit"
-        >
-          <span className="flex items-center justify-center">
-            <span className="mr-2">{displayFormTitle()}</span>
-          </span>
-        </Button>
+
+        <div className="flex justify-between">
+          <Button
+            type="button"
+            onClick={onBack}
+            className="rounded bg-white px-6 pb-2 pt-2.5 text-xs font-medium uppercase leading-normal text-black shadow-[0_4px_9px_-4px_#3b71ca]"
+            style={{
+              display:
+                displayStep === DISPLAY_SEARCH_STEP.OBJECT &&
+                !alreadySubmitted.current
+                  ? "none"
+                  : "",
+            }}
+            // Add more styles as needed
+          >
+            Back
+          </Button>
+          <Button
+            type="submit"
+            className="flex-1 rounded bg-black px-6 pb-2 pt-2.5 text-xs font-medium uppercase leading-normal text-white shadow-[0_4px_9px_-4px_#3b71ca]"
+            data-te-ripple-init
+            data-te-ripple-color="light"
+            onClick={handleSubmit(onSubmit)}
+          >
+            <span className="flex items-center justify-center">
+              <span className="mr-2">{displayFormTitle()}</span>
+            </span>
+          </Button>
+        </div>
       </div>
     </form>
   );
